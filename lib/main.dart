@@ -95,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _getIconButton(IconData icon, Function() fn) {
     return Platform.isIOS
-        ? GestureDetector()
+        ? GestureDetector(onTap: fn, child: Icon(icon))
         : IconButton(onPressed: fn, icon: Icon(icon));
   }
 
@@ -104,75 +104,79 @@ class _MyHomePageState extends State<MyHomePage> {
     final mediaQuery = MediaQuery.of(context);
     bool isLandscape = mediaQuery.orientation == Orientation.landscape;
 
+    final iconList = Platform.isIOS ? CupertinoIcons.refresh : Icons.list;
+    final chartList = Platform.isIOS ? CupertinoIcons.refresh : Icons.show_chart;
+
     final actions = <Widget>[
       if (isLandscape)
-        IconButton(
-          onPressed: () {
+        _getIconButton(
+          _showChart ? iconList : chartList,
+          () {
             setState(() {
               _showChart = !_showChart;
             });
           },
-          icon: Icon(_showChart ? Icons.list : Icons.show_chart),
         ),
-      IconButton(
-        onPressed: () => _openTransactionFormModal(context),
-        icon: const Icon(Icons.add),
+      _getIconButton(
+        Platform.isIOS ? CupertinoIcons.add : Icons.add,
+        () => _openTransactionFormModal(context),
       ),
     ];
 
-    final PreferredSizeWidget appBar = Platform.isIOS
-        ? CupertinoNavigationBar(
-            middle: const Text('Despesas Pessoais'),
-            trailing: Row(
-              children: actions,
-            ),
-          )
-        : AppBar(
-            title: const Text('Despesas Pessoais'),
-            actions: actions,
-          );
+    final PreferredSizeWidget appBar = AppBar(
+      title: const Text('Despesas Pessoais'),
+      actions: actions,
+    );
 
     final availableHeight = mediaQuery.size.height -
         appBar.preferredSize.height -
         mediaQuery.padding.top;
 
-    final bodyPage = SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // if (isLandscape)
-          //   Row(
-          //     mainAxisAlignment: MainAxisAlignment.center,
-          //     children: [
-          //       const Text('Exibir Gráfico'),
-          //       Switch.adaptive(
-          //         activeColor: Theme.of(context).colorScheme.secondary,
-          //         value: _showChart,
-          //         onChanged: (value) {
-          //           setState(() {
-          //             _showChart = value;
-          //           });
-          //         },
-          //       ),
-          //     ],
-          //   ),
-          if (_showChart || !isLandscape)
-            Container(
-              height: availableHeight * (isLandscape ? 0.7 : 0.3),
-              child: Chart(_recentTransactions),
-            ),
-          if (!isLandscape || !_showChart)
-            Container(
-              height: availableHeight * 0.7,
-              child: TransactionList(_transactions, _removeTransaction),
-            ),
-        ],
+    final bodyPage = SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // if (isLandscape)
+            //   Row(
+            //     mainAxisAlignment: MainAxisAlignment.center,
+            //     children: [
+            //       const Text('Exibir Gráfico'),
+            //       Switch.adaptive(
+            //         activeColor: Theme.of(context).colorScheme.secondary,
+            //         value: _showChart,
+            //         onChanged: (value) {
+            //           setState(() {
+            //             _showChart = value;
+            //           });
+            //         },
+            //       ),
+            //     ],
+            //   ),
+            if (_showChart || !isLandscape)
+              Container(
+                height: availableHeight * (isLandscape ? 0.7 : 0.3),
+                child: Chart(_recentTransactions),
+              ),
+            if (!isLandscape || !_showChart)
+              Container(
+                height: availableHeight * 0.7,
+                child: TransactionList(_transactions, _removeTransaction),
+              ),
+          ],
+        ),
       ),
     );
 
     return Platform.isIOS
         ? CupertinoPageScaffold(
-            navigationBar: appBar,
+            navigationBar: CupertinoNavigationBar(
+              middle: const Text('Despesas Pessoais'),
+              trailing: Row(
+                children: actions,
+                mainAxisSize: MainAxisSize.min,
+              ),
+            ),
             child: bodyPage,
           )
         : Scaffold(
